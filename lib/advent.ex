@@ -11,8 +11,8 @@ defmodule Advent do
 
   def day1(list) do
     list
-    |> Enum.map(&Advent.run_1/1)
-    |> Enum.map(&Advent.run_2/1)
+    |> Enum.map(&Advent.run_d1_fuel/1)
+    |> Enum.map(&Advent.run_d1_inc/1)
   end
 
   @doc """
@@ -80,4 +80,3 @@ end
 
 
 # c("advent.ex")
-# Advent.read_file("adv.txt") |> Enum.map(&Advent.run_1/1) |> Enum.map(&Advent.run_2/1)
