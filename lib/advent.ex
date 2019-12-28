@@ -76,7 +76,95 @@ defmodule Advent do
     |> Integer.to_string
     |> String.pad_leading(2, "0")
   end
+
+  def day3(list) do
+    list
+    |> String.split("\n")
+    |> Enum.map(fn x -> day3_parse_path(x) end)
+  end
+
+  defp day3_parse_path(list) do
+    list
+    |> String.split(",")
+    |> Enum.map(fn x ->
+      String.split_at(x, 1)
+      |> (fn {d, num} ->
+        {String.to_atom(d), elem(Integer.parse(num),0)}
+      end).()
+    end)
+  end
+
+  defp day3_path_to_point_pairs(path_list) do
+    Enum.reduce(path_list, %{:x => 0, :y => 0, :res => []}, fn ({d, num}, %{:x=>x, :y=>y, :res=>res}) ->
+      [xn,yn] = case d do
+        :D -> [x,y - num]
+        :U -> [x,y + num]
+        :L -> [x - num,y]
+        :R -> [x + num,y]
+        _ -> :error
+      end
+      n = res ++ [[{min(x,xn),min(y,yn)},{max(x,xn),max(y,yn)}]]
+      %{:x=>xn, :y=>yn, :res=>n}
+    end)
+    |> Map.fetch(:res)
+  end
+
+  defp day3_path_intersections(points1, points2) do
+    intersects = fn (a, b) ->
+      [{ax1, ay1}, {ax2, ay2}] = a
+      [{bx1, by1}, {bx2, by2}] = b
+
+      orientation = fn  [{x1, y1}, {x2, y2}] ->
+        cond do
+          x1 == x2 -> :vertical
+          y1 == y2 -> :horisontal
+        end
+      end
+
+      orient_a = orientation.(a)
+      orient_b = orientation.(b)
+
+      cond do
+        orient_a == orient_b ->
+          {false, "parallel"}
+        orient_a == :vertical && (( by1 < ay1 || by2 > ay2 ) || (ax1 < bx1 || ax2 > bx2 )) ->
+          {false, "no intersection A"}
+        orient_a == :horisontal && (( bx1 < ax1 || bx1 > ax2 ) || (ay1 < by1 || ay2 > by2 )) ->
+          {false, "no intersection B"}
+        orient_a == :vertical ->
+          {true, {ax1, by1}}
+        orient_a == :horisontal ->
+          {true, {bx1, ay1}}
+      end
+    end
+
+    for p1 <- points1, p2 <- points2 do
+      intersects.(p1, p2)
+    end
+  end
+
+  defp day3_nearest_intersect(points1, points2) do
+    day3_path_intersections(points1, points2)
+    |> Enum.reduce([], fn (x, acc) ->
+      case x do
+        {true, point}
+          -> acc ++ [%{:path => abs(elem(point, 0)) + abs(elem(point, 1)), :point => point}]
+        _ -> acc
+      end
+    end)
+    |> Enum.sort(&(&1[:path] < &2[:path]))
+  end
+
+  def day3(s1, s2) do
+    a = day3_parse_path(s1) |> day3_path_to_point_pairs
+    b = day3_parse_path(s2) |> day3_path_to_point_pairs
+    case [a,b] do
+      [{:ok,path1},{:ok,path2}] ->
+        day3_nearest_intersect(path1,path2)
+        |> List.first
+      _ -> :error
+    end
+  end
 end
 
-
-# c("advent.ex")
+# c("lib/advent.ex")
